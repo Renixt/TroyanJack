@@ -1,11 +1,10 @@
-// GameScreen.js
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, Button, Image } from 'react-native';
+import { StyleSheet, Text, View, Button, Image, ImageBackground } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createDeck, shuffleDeck, dealCard, calculateScore, cardImages } from './BlackjackLogic';
 
 export default function GameScreen({ route }) {
-  const { playerName } = route.params;
+  const { playerName, newGame } = route.params;
   const [deck, setDeck] = useState([]);
   const [playerHand, setPlayerHand] = useState([]);
   const [dealerHand, setDealerHand] = useState([]);
@@ -16,23 +15,30 @@ export default function GameScreen({ route }) {
 
   useEffect(() => {
     const loadGameState = async () => {
-      const savedGame = await AsyncStorage.getItem(`gameState_${playerName}`);
-      if (savedGame) {
-        const gameState = JSON.parse(savedGame);
-        setDeck(gameState.deck);
-        setPlayerHand(gameState.playerHand);
-        setDealerHand(gameState.dealerHand);
-        setPlayerScore(gameState.playerScore);
-        setDealerScore(gameState.dealerScore);
-        setGameOver(gameState.gameOver);
-        setMessage(gameState.message);
+      if (newGame) {
+        startGame();
+      } else {
+        const savedGames = await AsyncStorage.getItem(`savedGames_${playerName}`);
+        if (savedGames) {
+          const gameState = JSON.parse(savedGames)[0]; // Cargar la primera partida guardada
+          setDeck(gameState.deck);
+          setPlayerHand(gameState.playerHand);
+          setDealerHand(gameState.dealerHand);
+          setPlayerScore(gameState.playerScore);
+          setDealerScore(gameState.dealerScore);
+          setGameOver(gameState.gameOver);
+          setMessage(gameState.message);
+        }
       }
     };
     loadGameState();
-  }, [playerName]);
+  }, [playerName, newGame]);
 
   const saveGameState = async (newState) => {
-    await AsyncStorage.setItem(`gameState_${playerName}`, JSON.stringify(newState));
+    const savedGames = await AsyncStorage.getItem(`savedGames_${playerName}`);
+    const games = savedGames ? JSON.parse(savedGames) : [];
+    games[0] = newState; // Guardar siempre en la primera posición
+    await AsyncStorage.setItem(`savedGames_${playerName}`, JSON.stringify(games));
   };
 
   const startGame = () => {
@@ -122,7 +128,7 @@ export default function GameScreen({ route }) {
       playerScore,
       dealerScore: newDealerScore,
       gameOver: true,
-      message: newDealerScore > 21 || playerScore > newDealerScore ? "¡Ganaste!" : newDealerScore === playerScore ? "Es un empate." : "El dealer gana."
+      message: newDealerScore > 21 || playerScore > newDealerScore ? "¡Ganaste!" : newDealerScore === playerScore ? "El dealer gana." : "El dealer gana."
     };
 
     setDeck(newDeck);
@@ -130,6 +136,32 @@ export default function GameScreen({ route }) {
     setDealerScore(newDealerScore);
     setGameOver(true);
     setMessage(newState.message);
+
+    saveGameState(newState);
+  };
+
+  const continueGame = () => {
+    const newDeck = [...deck];
+    const playerInitialHand = [dealCard(newDeck), dealCard(newDeck)].filter(card => card);
+    const dealerInitialHand = [dealCard(newDeck), dealCard(newDeck)].filter(card => card);
+
+    const newState = {
+      deck: newDeck,
+      playerHand: playerInitialHand,
+      dealerHand: dealerInitialHand,
+      playerScore: calculateScore(playerInitialHand),
+      dealerScore: calculateScore(dealerInitialHand),
+      gameOver: false,
+      message: ""
+    };
+
+    setDeck(newDeck);
+    setPlayerHand(playerInitialHand);
+    setDealerHand(dealerInitialHand);
+    setPlayerScore(newState.playerScore);
+    setDealerScore(newState.dealerScore);
+    setGameOver(false);
+    setMessage("");
 
     saveGameState(newState);
   };
@@ -142,7 +174,10 @@ export default function GameScreen({ route }) {
   };
 
   return (
-    <View style={styles.container}>
+    <ImageBackground
+      source={require('./2.png')} // Ruta a la imagen de fondo
+      style={styles.container}
+    >
       <Text style={styles.title}>Juego de Blackjack</Text>
       <Text style={styles.subtitle}>Jugador: {playerName}</Text>
       <Text style={styles.score}>Puntaje del dealer: {dealerScore}</Text>
@@ -156,34 +191,45 @@ export default function GameScreen({ route }) {
         {renderCardImages(playerHand)}
       </View>
       <View style={styles.buttonContainer}>
-        <Button title="Nuevo Juego" onPress={startGame} />
-        <Button title="Pedir Carta" onPress={hit} />
-        <Button title="Plantarse" onPress={stand} />
+        {!gameOver && (
+          <>
+            <Button title="Pedir Carta" onPress={hit} />
+            <Button title="Plantarse" onPress={stand} />
+          </>
+        )}
+        {gameOver && (
+          <View style={styles.gameOverButtons}>
+            <Button title="Nuevo Juego" onPress={startGame} />
+            <Button title="Continuar" onPress={continueGame} />
+          </View>
+        )}
       </View>
       <Text style={styles.message}>{message}</Text>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
+    color: '#fff',
   },
   subtitle: {
     fontSize: 18,
     marginBottom: 10,
+    color: '#fff',
   },
   score: {
     fontSize: 18,
     marginVertical: 5,
+    color: '#fff',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -191,10 +237,11 @@ const styles = StyleSheet.create({
     width: '80%',
     marginVertical: 20,
   },
-  message: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 20,
+  gameOverButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '80%',
+    marginVertical: 20,
   },
   handContainer: {
     flexDirection: 'row',
@@ -203,10 +250,17 @@ const styles = StyleSheet.create({
   handTitle: {
     fontSize: 18,
     marginRight: 10,
+    color: '#fff',
   },
   cardImage: {
-    width: 60,
-    height: 90,
-    margin: 5,
+    width: 50,
+    height: 75,
+    marginRight: 10,
+  },
+  message: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 20,
+    color: '#fff',
   },
 });
