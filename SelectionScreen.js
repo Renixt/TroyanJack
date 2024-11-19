@@ -5,9 +5,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function SelectionScreen({ navigation, route }) {
   const { playerName } = route.params;
   const [hasSavedGame, setHasSavedGame] = useState(false);
+  const [fichas, setFichas] = useState('');
 
   useEffect(() => {
     const checkSavedGame = async () => {
+      try{
+        const savedFichas = await AsyncStorage.getItem('fichas');
+        if (savedFichas) setFichas(savedFichas);
+      }catch(error){
+        console.log('Error al cargar las fichas guardadas')
+        
+      }
+      
       const savedGame = await AsyncStorage.getItem(`savedGames_${playerName}`);
       setHasSavedGame(!!savedGame); // Asegura que sea booleano
     };
@@ -29,7 +38,7 @@ export default function SelectionScreen({ navigation, route }) {
       style={styles.container}
     >
       <Text style={styles.title}>
-        {hasSavedGame ? `Bienvenido de nuevo, ${playerName}` : `Hola, ${playerName}`}
+        {hasSavedGame ? `Bienvenido de nuevo ${playerName}, tus fichas son: ${fichas}` : `Hola ${playerName}, tus fichas son: ${fichas}`}
       </Text>
       <View style={styles.buttonContainer}>
         {hasSavedGame ? (

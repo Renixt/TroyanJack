@@ -11,10 +11,10 @@ export const cardImages = {
   "7": { "C": require("./Imagenes/7C.png"), "D": require("./Imagenes/7D.png"), "H": require("./Imagenes/7H.png"), "S": require("./Imagenes/7S.png") },
   "8": { "C": require("./Imagenes/8C.png"), "D": require("./Imagenes/8D.png"), "H": require("./Imagenes/8H.png"), "S": require("./Imagenes/8S.png") },
   "9": { "C": require("./Imagenes/9C.png"), "D": require("./Imagenes/9D.png"), "H": require("./Imagenes/9H.png"), "S": require("./Imagenes/9S.png") },
-  "10": { "C": require("./Imagenes/10C.png"), "D": require("./Imagenes/10D.png"), "H": require("./Imagenes/10H.png"), "S": require("./Imagenes/10S.png") }
-  /*"J": { "C": require("./Imagenes/JC.png"), "D": require("./Imagenes/JD.png"), "H": require("./Imagenes/JH.png"), "S": require("./Imagenes/JS.png") },
+  "10": { "C": require("./Imagenes/10C.png"), "D": require("./Imagenes/10D.png"), "H": require("./Imagenes/10H.png"), "S": require("./Imagenes/10S.png") },
+  "J": { "C": require("./Imagenes/JC.png"), "D": require("./Imagenes/JD.png"), "H": require("./Imagenes/JH.png"), "S": require("./Imagenes/JS.png") },
   "Q": { "C": require("./Imagenes/QC.png"), "D": require("./Imagenes/QD.png"), "H": require("./Imagenes/QH.png"), "S": require("./Imagenes/QS.png") },
-  "K": { "C": require("./Imagenes/KC.png"), "D": require("./Imagenes/KD.png"), "H": require("./Imagenes/KH.png"), "S": require("./Imagenes/KS.png") }*/
+  "K": { "C": require("./Imagenes/KC.png"), "D": require("./Imagenes/KD.png"), "H": require("./Imagenes/KH.png"), "S": require("./Imagenes/KS.png") }
 
 };
 

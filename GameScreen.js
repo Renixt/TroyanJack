@@ -12,9 +12,17 @@ export default function GameScreen({ route }) {
   const [dealerScore, setDealerScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [message, setMessage] = useState("");
+  const [fichas, setFichas] = useState('');
+
 
   useEffect(() => {
     const loadGameState = async () => {
+      try {
+        const savedFichas = await AsyncStorage.getItem('fichas');
+        if (savedFichas) setFichas(savedFichas);
+      } catch (error) {
+        console.log('Error al cargar las fichas guardadas')
+      }
       if (newGame) {
         startGame();
       } else {
@@ -85,6 +93,27 @@ export default function GameScreen({ route }) {
     const newPlayerHand = [...playerHand, card];
     const newPlayerScore = calculateScore(newPlayerHand);
 
+    const handleGameEnd = async () => {
+      console.log('---------hit: handlegame()')
+      let newFichas;
+      // let message;
+
+      if (newPlayerScore > 21) {
+        newFichas = parseInt(fichas) - 50;
+        setFichas(newFichas);
+        try {
+          await AsyncStorage.setItem('fichas', newFichas.toString());
+          console.log('resta completada, te pasaste');
+        } catch (error) {
+          console.log('error al guardar las fichas ganadoras')
+        }
+        // message= `¡Ganaste!, ahora tienes ${fichas} fichas`;
+      }
+      //return message;
+
+    };
+
+   handleGameEnd();
     const newState = {
       deck: newDeck,
       playerHand: newPlayerHand,
@@ -92,7 +121,7 @@ export default function GameScreen({ route }) {
       playerScore: newPlayerScore,
       dealerScore,
       gameOver: newPlayerScore > 21,
-      message: newPlayerScore > 21 ? "Te pasaste de 21. ¡Perdiste!" : ""
+      message: newPlayerScore > 21 ? `Te pasaste de 21!, -50 fichas` : ""
     };
 
     setDeck(newDeck);
@@ -121,6 +150,39 @@ export default function GameScreen({ route }) {
       newDealerScore = calculateScore(newDealerHand);
     }
 
+
+    const handleGameEnd = async () => {
+      console.log('---------stand: handlegame()')
+      let newFichas;
+      // let message;
+
+      if (newDealerScore > 21 || playerScore > newDealerScore) {
+        newFichas = parseInt(fichas) + 50;
+        setFichas(newFichas);
+        try {
+          await AsyncStorage.setItem('fichas', newFichas.toString());
+          console.log('suma completada, tu ganas');
+        } catch (error) {
+          console.log('error al guardar las fichas ganadoras')
+        }
+        // message= `¡Ganaste!, ahora tienes ${fichas} fichas`;
+      } else {
+
+        newFichas = parseInt(fichas) - 50;
+        setFichas(newFichas);
+        try {
+          await AsyncStorage.setItem('fichas', newFichas.toString());
+          console.log('resta completada, dealer gana');
+        } catch (error) {
+          console.log('error al guardar las fichas ganadoras')
+        }
+        //  message = `El dealer gana, ahora tienes ${fichas} fichas`;
+      }
+      //return message;
+
+    };
+
+    handleGameEnd();
     const newState = {
       deck: newDeck,
       playerHand,
@@ -128,7 +190,22 @@ export default function GameScreen({ route }) {
       playerScore,
       dealerScore: newDealerScore,
       gameOver: true,
-      message: newDealerScore > 21 || playerScore > newDealerScore ? "¡Ganaste!" : newDealerScore === playerScore ? "El dealer gana." : "El dealer gana."
+      message: newDealerScore > 21 || playerScore > newDealerScore
+        ? (() => {
+          // newFichas= parseInt(fichas) + 50;
+          // setFichas(newFichas);
+          // await AsyncStorage.setItem('fichas', newFichas.toString());
+
+          return `¡Ganaste!, +50 fichas`;
+
+        })() : (() => {
+          //newFichas = parseInt(fichas) -50;
+          // setFichas(newFichas);
+
+          return `El dealer gana, -50 fichas`;
+
+        })
+
     };
 
     setDeck(newDeck);
@@ -173,19 +250,29 @@ export default function GameScreen({ route }) {
     });
   };
 
+  /*<Text style={styles.subtitle}>Jugador: {playerName}</Text>
+        <Text style={styles.score}>Puntaje del dealer: {dealerScore}</Text>
+      <Text style={styles.score}>Tu puntaje: {playerScore}</Text>
+
+  */ 
+
   return (
     <ImageBackground
       source={require('./2.png')} // Ruta a la imagen de fondo
       style={styles.container}
     >
-      <Text style={styles.title}>Juego de Blackjack</Text>
-      <Text style={styles.subtitle}>Jugador: {playerName}</Text>
-      <Text style={styles.score}>Puntaje del dealer: {dealerScore}</Text>
+
+    <View style={styles.chipsContainer}>
+      <Text style={styles.chipsText}>Fichas: {fichas}</Text>
+    </View>
+      <Text style={styles.title}>TroyanJack</Text>
+      
+      <Text style={styles.subtitle}>Apuesta: 50 fichas</Text>
+
       <View style={styles.handContainer}>
         <Text style={styles.handTitle}>Mano del dealer:</Text>
         {renderCardImages(dealerHand)}
       </View>
-      <Text style={styles.score}>Tu puntaje: {playerScore}</Text>
       <View style={styles.handContainer}>
         <Text style={styles.handTitle}>Mano del jugador:</Text>
         {renderCardImages(playerHand)}
@@ -199,8 +286,8 @@ export default function GameScreen({ route }) {
         )}
         {gameOver && (
           <View style={styles.gameOverButtons}>
-            <Button title="Nuevo Juego" onPress={startGame} />
-            <Button title="Continuar" onPress={continueGame} />
+            <Button title="Reiniciar Mazo" onPress={startGame} />
+            <Button title="Seguir Jugando" onPress={continueGame} />
           </View>
         )}
       </View>
@@ -215,6 +302,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  chipsContainer: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 10,
+    borderRadius: 8,
+  },
+  chipsText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',},
+
   title: {
     fontSize: 24,
     fontWeight: 'bold',
